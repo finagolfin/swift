@@ -428,11 +428,6 @@ function(_add_variant_link_flags)
     swift_android_cxx_libraries_for_arch(${LFLAGS_ARCH} cxx_link_libraries)
     list(APPEND link_libraries ${cxx_link_libraries})
 
-    # link against the ICU libraries
-    list(APPEND link_libraries
-      ${SWIFT_ANDROID_${LFLAGS_ARCH}_ICU_I18N}
-      ${SWIFT_ANDROID_${LFLAGS_ARCH}_ICU_UC})
-
     swift_android_lib_for_arch(${LFLAGS_ARCH} ${LFLAGS_ARCH}_LIB)
     foreach(path IN LISTS ${LFLAGS_ARCH}_LIB)
       list(APPEND library_search_directories ${path})

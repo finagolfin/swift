@@ -89,9 +89,7 @@ set(swift_runtime_library_compile_flags ${swift_runtime_compile_flags})
 list(APPEND swift_runtime_library_compile_flags -DswiftCore_EXPORTS)
 list(APPEND swift_runtime_library_compile_flags -I${SWIFT_SOURCE_DIR}/include)
 
-set(sdk "${SWIFT_HOST_VARIANT_SDK}")
-if(SWIFT_BUILD_STATIC_STDLIB AND "${sdk}" STREQUAL "LINUX")
-  list(REMOVE_ITEM swift_runtime_sources ImageInspectionELF.cpp)
+function(swift_runtime_static_libraries sdk)
   set(static_binary_lnk_file_list)
   string(TOLOWER "${sdk}" lowercase_sdk)
 
@@ -100,6 +98,7 @@ if(SWIFT_BUILD_STATIC_STDLIB AND "${sdk}" STREQUAL "LINUX")
     ImageInspectionELF.cpp
     C_COMPILE_FLAGS ${swift_runtime_library_compile_flags}
     LINK_FLAGS ${swift_runtime_linker_flags}
+    TARGET_SDKS ${sdk}
     SWIFT_COMPILE_FLAGS ${SWIFT_STANDARD_LIBRARY_SWIFT_FLAGS}
     INSTALL_IN_COMPONENT stdlib)
 
@@ -150,7 +149,7 @@ if(SWIFT_BUILD_STATIC_STDLIB AND "${sdk}" STREQUAL "LINUX")
                              DESTINATION "lib/swift_static/${lowercase_sdk}"
                              COMPONENT stdlib)
   add_custom_target(static_binary_magic ALL DEPENDS ${static_binary_lnk_file_list})
-  foreach(arch IN LISTS SWIFT_SDK_LINUX_ARCHITECTURES)
+  foreach(arch IN LISTS SWIFT_SDK_${sdk}_ARCHITECTURES)
     add_dependencies(static_binary_magic ${swift_image_inspection_${arch}_static})
   endforeach()
   add_dependencies(static_binary_magic ${swift_image_inspection_static_primary_arch})
@@ -160,9 +159,10 @@ if(SWIFT_BUILD_STATIC_STDLIB AND "${sdk}" STREQUAL "LINUX")
     ImageInspectionELF.cpp
     C_COMPILE_FLAGS ${swift_runtime_library_compile_flags}
     LINK_FLAGS ${swift_runtime_linker_flags}
+    TARGET_SDKS ${sdk}
     SWIFT_COMPILE_FLAGS ${SWIFT_STANDARD_LIBRARY_SWIFT_FLAGS}
     INSTALL_IN_COMPONENT never_install)
-endif()
+endfunction()
 
 if(SWIFT_STDLIB_USE_NONATOMIC_RC)
   set(_RUNTIME_NONATOMIC_FLAGS -DSWIFT_STDLIB_USE_NONATOMIC_RC)
@@ -180,7 +180,7 @@ add_swift_target_library(swiftRuntime OBJECT_LIBRARY
 
 set(ELFISH_SDKS)
 set(COFF_SDKS)
-foreach(sdk ${SWIFT_CONFIGURED_SDKS})
+foreach(sdk ${SWIFT_SDKS})
   if("${SWIFT_SDK_${sdk}_OBJECT_FORMAT}" STREQUAL "ELF")
     list(APPEND ELFISH_SDKS ${sdk})
   elseif("${SWIFT_SDK_${sdk}_OBJECT_FORMAT}" STREQUAL "COFF")
@@ -208,7 +208,7 @@ add_swift_target_library(swiftImageRegistrationObjectCOFF
                   SWIFT_COMPILE_FLAGS ${SWIFT_STANDARD_LIBRARY_SWIFT_FLAGS}
                   INSTALL_IN_COMPONENT none)
 
-foreach(sdk ${SWIFT_CONFIGURED_SDKS})
+foreach(sdk ${SWIFT_SDKS})
   foreach(arch ${SWIFT_SDK_${sdk}_ARCHITECTURES})
     set(arch_subdir "${SWIFT_SDK_${sdk}_LIB_SUBDIR}/${arch}")
     set(arch_suffix "${SWIFT_SDK_${sdk}_LIB_SUBDIR}-${arch}")
